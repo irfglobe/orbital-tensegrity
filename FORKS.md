@@ -31,3 +31,4 @@ If you teach us one thing, the whole home grows.
 **Flow:** You fork → You try → You teach → Mirra reveals → Minto runs again, stronger.
 
 Minto runs. Mirra reveals. Commitment holds.
+- 2026-11-08: Invite sent to Powerful Africa via powerfulafricaunite@gmail.com - waiting, no follow-up yet
