@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ekegusii Pattern Checker (draft)</title>
+<style>
+:root{--bg:#eceae4;--card:#f8f7f3;--ink:#23272a;--mute:#5d6469;--line:#cfccc2;--rec:#4f7f5a;--pat:#b9791a;--none:#7b8288;--btn:#2f3a40;--btnt:#f4f2ec;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d2124;--card:#262b2f;--ink:#ebe9e2;--mute:#a0a7ad;--line:#3b4247;--rec:#82b58d;--pat:#e0a23c;--none:#8d959b;--btn:#dcd9cf;--btnt:#1d2124}}
+:root[data-theme="dark"]{--bg:#1d2124;--card:#262b2f;--ink:#ebe9e2;--mute:#a0a7ad;--line:#3b4247;--rec:#82b58d;--pat:#e0a23c;--none:#8d959b;--btn:#dcd9cf;--btnt:#1d2124}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:20px 16px 40px}
+h1{font:600 28px/1.15 "Iowan Old Style",Palatino,Georgia,serif;margin:0 0 8px}
+h2{font:600 19px/1.2 "Iowan Old Style",Palatino,Georgia,serif;margin:0 0 6px}
+p{margin:0 0 10px}
+.banner{border-left:4px solid var(--pat);background:var(--card);padding:10px 12px;font-size:14px;color:var(--mute);margin:14px 0 22px}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:18px}
+label{display:block;font-weight:600;margin-bottom:6px}
+input,select{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:11px 12px;min-height:44px}
+button{font:inherit;font-weight:600;background:var(--btn);color:var(--btnt);border:0;border-radius:8px;padding:11px 18px;min-height:44px;cursor:pointer}
+:focus-visible{outline:3px solid var(--pat);outline-offset:2px}
+.row{display:flex;gap:10px;margin-top:10px}
+.row>*{flex:1}.row button{flex:0 0 auto}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chips button{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:500;padding:6px 12px;min-height:36px}
+.res{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.stones{display:inline-flex;gap:5px;vertical-align:middle;margin-right:8px}
+.stones i{width:13px;height:13px;border-radius:50%;border:2px solid currentColor;display:block}
+.stones i.on{background:currentColor}
+.st{font-weight:700;display:flex;align-items:center;margin-bottom:6px}
+.rec{color:var(--rec)}.pat{color:var(--pat)}.none{color:var(--none)}
+.big{font:600 20px/1.3 "Iowan Old Style",Palatino,Georgia,serif;color:var(--ink);margin-bottom:4px}
+.small{font-size:14px;color:var(--mute)}
+.parts{font:600 18px/1.4 "Iowan Old Style",Palatino,Georgia,serif;margin:6px 0}
+</style>
+</head>
+<body>
+<main>
+<h1>Ekegusii pattern checker</h1>
+<p>Type a word or phrase and see whether it matches what the author has recorded, or fits a pattern read from it.</p>
+<div class="banner">Draft, pending review by a second speaker. This tool compares forms with one speaker’s recorded usage and a few patterns inferred from it. It cannot tell you what is correct Ekegusii, and north and south forms may differ.</div>
+
+<section>
+<h2>Check a form</h2>
+<label for="q">Word or phrase</label>
+<input id="q" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="for example: twasangire">
+<div class="row"><button id="go" type="button">Check form</button></div>
+<div class="chips" id="chips"></div>
+<div class="res" id="out" aria-live="polite"><p class="small">Results appear here. Three filled stones mean the author recorded it, one means it fits a pattern, none means no match.</p></div>
+</section>
+
+<section>
+<h2>Build a verb</h2>
+<p class="small">Pick a person and a root. The checker joins the pieces the way the recorded verbs do.</p>
+<div class="row">
+<div><label for="who">Person</label><select id="who"></select></div>
+<div><label for="vb">Root</label><select id="vb"></select></div>
+</div>
+<div class="res" id="bout" aria-live="polite"></div>
+</section>
+
+<p class="small">Statuses: recorded means given by the author. A pattern fit is a guess until two speakers, one from the north and one from the south, confirm it.</p>
+</main>
+<script>
+var D=[
+["mwane","my home; private ownership"],["mwao","your home"],["mwago","your home"],["mwaye","his or her home"],
+["minto","our home; the community; also a greeting"],["minto neyemo tari mwane","Our home is one; not my home"],
+["minto bwakire","good morning to our home (said to a group, warmest to a woman)"],["bwakire buya","reply: it has dawned well"],
+["bwakire se","reply: it has dawned"],["se","a reply; carries the full sense of ogokia"],["ee bwakire","yes, it has dawned"],
+["ee bwakire omwana one","yes, it has dawned, my child"],["bwairire","the evening greeting, said as a question"],["tiga bokie","may the day break"],
+["inche","I"],["intwe","we"],["inwe","you (plural)"],["baria","they"],["aye","given as “you”; its ending matches mwaye, so this is open"],
+["omonto","person"],["monto","person (short form)"],["abanto","people"],["mont’ominto","person from our home"],["minto mwanyagetinge","an address to fellow Gusii, seen in a printed source"],
+["ogosanga","the art of sharing"],["sanga","share"],["omogisangi","someone you are allowed to share with"],["okoumerana","meeting, as in getting to meet"],
+["tosange naende","may we get to share again"],["twasangire amanyabwari","we have shared a meal of sweet potatoes"],
+["okoba","to become"],["igo","like that"],["takoba igo","don’t be like that"],
+["egechuchu","one chick"],["gechuchu","one chick (short form)"],["ebichuchu","chicks"],["bichuchu","chicks (short form)"],
+["bichuchu biane biabekir’amagena","my chicks have laid eggs (a song line, tied to its tune)"],
+["egetinge","marriage token worn at the ankle"],["ebitinge","marriage tokens; a wife who bore a son at her matrimonial home had two"],
+["mwanyagetinge","home of the one who wears the egetinge; a name for the Gusii"],
+["ogokia","to dawn"],["ogoika","to arrive"],["ragera","eat"],["kwarageire","have you eaten?"],
+["nakwanire","I have spoken"],["nakanire","I have refused"],["gwakwanire","you have spoken"],["kwabwenire","have you recovered?"],
+["twachakire","we have started"],["twachakire kogenda","we have started to go"],["gwaikire","you have arrived"],["oikire","he or she has arrived"],
+["bachakire","they have started"],["twasangire","we have shared"],
+["nakwanire amang’ana ayio","I have spoken those words"],["nakanire amang’ana ayio","I have refused those words"],["gwakwanire amang’ana ayio","you have spoken those words"],
+["aba bachakire bono gonchanda","these ones have started now to bother me"],
+["omonto omuya","a good person"],["egechuchu ekiya","a good chick"],["egesaku ekebe","a bad community"],["egento ekebe","a bad thing"],
+["emambia engiya","good morning"],["emogoroba engiya","good evening (an English-based phrase; the native greeting is bwairire)"],
+["enyomba engiya","good (noun not glossed)"],["eyanga engiya","good (noun not glossed)"],["eamate engiya","good (noun not glossed)"]
+];
+var M=[["twa","we"],["gwa","you (soft gw)"],["kwa","you (hard kw)"],["na","I"],["ba","they"],["o","he or she"]];
+var R={kwan:"speak",kan:"refuse",chak:"start",sang:"share",bwen:"recover",ik:"arrive",rager:"eat",bek:"lay"};
+var P={kwan:"spoken",kan:"refused",chak:"started",sang:"shared",bwen:"recovered",ik:"arrived",rager:"eaten",bek:"laid"};
+function norm(s){return s.toLowerCase().replace(/[’'`‘]/g,"").replace(/[!?.,;:]/g,"").replace(/\s+/g," ").trim()}
+var K={};D.forEach(function(d){K[norm(d[0])]=d});
+function stem(r){return r==="rager"?"rage":r}
+function join(m,r){return m+stem(r)+"ire"}
+function st(cls,n,label){var s='<div class="st '+cls+'"><span class="stones" aria-hidden="true">';for(var i=0;i<3;i++)s+='<i'+(i<n?' class="on"':'')+'></i>';return s+'</span>'+label+'</div>'}
+function esc(t){return t.replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
+function check(raw){
+ var q=norm(raw);if(!q)return '<p class="small">Type a word or phrase first.</p>';
+ if(K[q])return st("rec",3,"Recorded by the author")+'<div class="big">'+esc(K[q][0])+'</div><p>'+esc(K[q][1])+'</p><p class="small">Still waiting for a second speaker to confirm.</p>';
+ var w=q.split(" ");
+ if(w.length===1&&/ire$/.test(q)){
+  for(var i=0;i<M.length;i++){var m=M[i][0];
+   if(q.indexOf(m)===0){var core=q.slice(m.length,-3);
+    if(core){var rt=R[core]?core:(R[core+"r"]?core+"r":null);
+     if(rt)return st("pat",1,"Fits a pattern (a guess)")+'<div class="parts">'+m+' + '+stem(rt)+' + ire</div><p>Reads as “'+M[i][1]+" have "+P[rt]+'” if the pattern holds.</p><p class="small">Marker, root and the -ire ending all match recorded verbs, but this exact form was not given.</p>';
+     return st("pat",1,"Partly fits a pattern")+'<div class="parts">'+m+' + '+esc(core)+' + ire</div><p>The marker “'+m+'” ('+M[i][1]+') and the -ire ending match recorded verbs, but the root “'+esc(core)+'” is not recorded.</p>'}}}
+ }
+ if(w.length===2){var a=w[0],b=w[1];
+  if(a.indexOf("ege")===0&&(b==="ekiya"||b==="ekebe"))return st("pat",1,"Fits a pattern (a guess)")+'<p>Nouns starting ege- were given with ekiya (good) and ekebe (bad), so “'+esc(q)+'” would mean “'+(b==="ekiya"?"a good":"a bad")+' '+esc(a)+'”.</p><p class="small">The noun itself is not recorded here.</p>';
+  if(a.charAt(0)==="e"&&b==="engiya")return st("pat",1,"Fits a pattern (a guess)")+'<p>Engiya (good) was given with emambia, emogoroba, enyomba, eyanga and eamate. Why these nouns take it is not yet known.</p>'}
+ return st("none",0,"No match")+'<p>This form is not in the recorded list and does not fit a known pattern.</p><p class="small">That says nothing about whether it is right. Ask a speaker.</p>'
+}
+function build(){
+ var m=M[document.getElementById("who").value],r=document.getElementById("vb").value,f=join(m[0],r),k=K[norm(f)];
+ document.getElementById("bout").innerHTML=(k?st("rec",3,"Recorded by the author"):st("pat",1,"A guess from the pattern"))+'<div class="parts">'+m[0]+' + '+stem(r)+' + ire</div><div class="big">'+f+'</div><p>'+(k?esc(k[1]):m[1]+" have "+P[r]+" (not given by the author)")+'</p>'+(r==="rager"?'<p class="small">The r of rager seems to drop before -ire, as in kwarageire.</p>':'')
+}
+var w=document.getElementById("who"),v=document.getElementById("vb");
+M.forEach(function(m,i){w.add(new Option(m[1],i))});
+Object.keys(R).forEach(function(r){v.add(new Option(R[r]+" ("+r+")",r))});
+w.onchange=v.onchange=build;build();
+document.getElementById("go").onclick=function(){document.getElementById("out").innerHTML=check(document.getElementById("q").value)};
+document.getElementById("q").onkeydown=function(e){if(e.key==="Enter")document.getElementById("go").click()};
+["Minto bwakire","twasangire","nakwanire","egento ekiya","bwairire","ogosanga"].forEach(function(t){
+ var b=document.createElement("button");b.type="button";b.textContent=t;
+ b.onclick=function(){document.getElementById("q").value=t;document.getElementById("go").click()};
+ document.getElementById("chips").appendChild(b)});
+</script>
+</body>
+</html>
